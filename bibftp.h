@@ -7,20 +7,10 @@ typedef enum {
     LS
 } typereq_t;
 
-struct request {
+struct request_t {
     typereq_t type;
     char fichier[256];
 };
-
-
-
-
-
-
-
-
-
-
 
 
 
