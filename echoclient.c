@@ -47,9 +47,9 @@ int main(int argc, char **argv)
         exit(0);
     }
 
-    printf("Téléchargement en cours...\n");
+    printf("telechargment du fichier demandé\n");
 
-    //créer fichier local
+    //creation fichier local
     char filepath[MAXLINE];
     int retour=snprintf(filepath, sizeof(filepath), "%s%s", CLIENT_DIR, filename);
     if (retour >= (int)sizeof(filepath)) {
@@ -67,7 +67,7 @@ int main(int argc, char **argv)
 
     close(fd);
 
-    printf("Fichier reçu et sauvegardé dans %s\n", filepath);
+    printf("fichier reçu et sauvegardé dans %s\n", filepath);
 
     Close(clientfd);
     return 0;
