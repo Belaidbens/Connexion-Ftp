@@ -51,7 +51,12 @@ int main(int argc, char **argv)
 
     //créer fichier local
     char filepath[MAXLINE];
-    snprintf(filepath, MAXLINE, "%s%s", CLIENT_DIR, filename);
+    int retour=snprintf(filepath, sizeof(filepath), "%s%s", CLIENT_DIR, filename);
+    if (retour >= (int)sizeof(filepath)) {
+        fprintf(stderr, "tro long path\n");
+        Close(clientfd);
+        return -1;
+        }
 
     fd = open(filepath, O_CREAT | O_WRONLY | O_TRUNC, 0644);
 

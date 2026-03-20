@@ -37,7 +37,12 @@ void file_server(int connfd)
 
         // ouvrir fichier
         char filepath[MAXLINE];
-        snprintf(filepath, MAXLINE, "%s%s", SERVER_DIR, req.fichier);
+        int retour=snprintf(filepath, sizeof(filepath), "%s%s", SERVER_DIR, req.fichier);
+        if (retour >= (int)sizeof(filepath)) {
+            fprintf(stderr, "tro long path\n");
+            Close(connfd);
+            return;
+        }
         fd = open(filepath, O_RDONLY);// Serverdir/fichier
 
         if (fd < 0) {
@@ -55,6 +60,7 @@ void file_server(int connfd)
         while ((n = read(fd, buf, MAXLINE)) > 0) {
             Rio_writen(connfd, buf, n);
         }
+        
 
         close(fd);
     }
@@ -67,10 +73,10 @@ void file_server(int connfd)
 
 
 
-int main(int argc, char **argv)
+int main()
 {
     signal(SIGINT, sigint_handler);
-    int listenfd, connfd, port;
+    int listenfd, connfd;
     socklen_t clientlen;
     struct sockaddr_in clientaddr;
     int i;
@@ -85,7 +91,7 @@ int main(int argc, char **argv)
     for (i = 0; i < NB_PROC; i++) {
         pids[i] = fork();
         if (pids[i] == 0) { // fils
-            Close(listenfd);
+            //Close(listenfd);
             signal(SIGINT, sigint_handler); // on retablit comportement par defaut de SIGINT
             while (1) {
                 clientlen = sizeof(clientaddr);
