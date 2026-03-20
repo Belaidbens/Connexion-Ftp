@@ -1,16 +1,21 @@
 #ifndef __BIBFTP_H__
 #define __BIBFTP_H__
 
+#include "csapp.h"
+#define NB_PROC 10
+#define PORT_FTP 2121
+#define MAX_NAME_LEN 256
+
 typedef enum {
     GET = 0,
     PUT,
     LS
 } typereq_t;
 
-struct request_t {
+typedef struct request_t {
     typereq_t type;
-    char fichier[256];
-};
+    char fichier[MAXLINE];
+} request_t;
 
 
 
