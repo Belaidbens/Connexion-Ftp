@@ -4,16 +4,13 @@
 pid_t pids[NB_PROC];
 
 
-//void echo(int connfd);
-
 
 void sigint_handler(int sig) {
     printf("Shutting down server...\n");
-    signal(SIGINT, SIG_DFL); // rétablir le comportement par défaut pour SIGINT
+    signal(SIGINT, SIG_DFL); 
     for(int i = 0; i < NB_PROC; i++) {
-        kill(pids[i], SIGINT); // envoyer SIGTERM à tous les processus du groupe
+        kill(pids[i], SIGINT); 
     }
-   kill(0,SIGINT);
     exit(0);
 }
 
@@ -48,7 +45,7 @@ void file_server(int connfd)
             return;
         }
 
-        // envoyer OK
+        // envoyer acquitement de la requete pour dire oui au client 
         status = 0;
         Rio_writen(connfd, &status, sizeof(int));
 
@@ -60,7 +57,7 @@ void file_server(int connfd)
         close(fd);
     }
 
-    // 5. fin connexion = fin transfert
+    // 5. fin connexion et fin transfert
     Close(connfd);
 }
 
@@ -86,6 +83,7 @@ int main(int argc, char **argv)
     for (i = 0; i < NB_PROC; i++) {
         pids[i] = fork();
         if (pids[i] == 0) { // fils
+            Close(listenfd);
             signal(SIGINT, sigint_handler); // rétablir le comportement par défaut pour SIGINT
             while (1) {
                 clientlen = sizeof(clientaddr);
@@ -113,9 +111,8 @@ int main(int argc, char **argv)
                        ntohs(localaddr.sin_port),
                        ntohs(peeraddr.sin_port));
 
-                //echo(connfd);
                 file_server(connfd);
-                Close(connfd);
+                //Close(connfd);
             }
         }
     }
