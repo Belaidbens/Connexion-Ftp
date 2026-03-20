@@ -5,6 +5,8 @@
 #define NB_PROC 10
 #define PORT_FTP 2121
 #define MAX_NAME_LEN 256
+#define SERVER_DIR "./server_files/"
+#define CLIENT_DIR "./client_files/"
 
 typedef enum {
     GET = 0,

@@ -24,7 +24,7 @@ void file_server(int connfd)
     ssize_t n;
     int status;
 
-    // 1. Lire la requête STRUCTURE
+    // Lire la requête STRUCTURE
     if (Rio_readn(connfd, &req, sizeof(request_t)) <= 0) {
         Close(connfd);
         return;
@@ -32,11 +32,13 @@ void file_server(int connfd)
 
     printf("Client demande le fichier : %s\n", req.fichier);
 
-    // 2. Vérifier type 
+    // Verifier type 
     if (req.type == GET) {
 
-        // 3. ouvrir fichier
-        fd = open(req.fichier, O_RDONLY);
+        // ouvrir fichier
+        char filepath[MAXLINE];
+        snprintf(filepath, MAXLINE, "%s%s", SERVER_DIR, req.fichier);
+        fd = open(filepath, O_RDONLY);// Serverdir/fichier
 
         if (fd < 0) {
             status = -1;
@@ -57,7 +59,7 @@ void file_server(int connfd)
         close(fd);
     }
 
-    // 5. fin connexion et fin transfert
+    //fin connexion et fin transfert
     Close(connfd);
 }
 
@@ -84,7 +86,7 @@ int main(int argc, char **argv)
         pids[i] = fork();
         if (pids[i] == 0) { // fils
             Close(listenfd);
-            signal(SIGINT, sigint_handler); // rétablir le comportement par défaut pour SIGINT
+            signal(SIGINT, sigint_handler); // on retablit comportement par defaut de SIGINT
             while (1) {
                 clientlen = sizeof(clientaddr);
 
@@ -117,7 +119,7 @@ int main(int argc, char **argv)
         }
     }
 
-    /* parent attend */
+    // père attend
     while (1) {
         pause();
     }
