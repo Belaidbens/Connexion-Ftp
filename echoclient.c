@@ -1,10 +1,13 @@
 #include "bibftp.h"
+#include <stddef.h>
+#include <stdio.h>
 
 int main(int argc, char **argv)
 {
     int clientfd;
     char *host;
     request_t req;
+    response_t res;
     char filename[MAXLINE];
     char buf[MAXLINE];
     int fd;
@@ -35,19 +38,19 @@ int main(int argc, char **argv)
     Rio_writen(clientfd, &req, sizeof(request_t));
 
     //lire status pour savoir le serveur a trouvé le fichier ou pas
-    if (Rio_readn(clientfd, &status, sizeof(int)) <= 0) {
+    if (Rio_readn(clientfd, &res, sizeof(response_t)) <= 0) {
         printf("Erreur serveur\n");
         Close(clientfd);
         exit(0);
     }
 
-    if (status == -1) {
-        printf("Fichier introuvable sur le serveur\n");
+    if (res.status != RES_VALIDE) {
+        printf("Erreur serveur: %s\n", res.message);
         Close(clientfd);
         exit(0);
     }
 
-    printf("telechargment du fichier demandé\n");
+    printf("telechargment du fichier demandé (%zu bytes)\n", (size_t)res.size);
 
     //creation fichier local
     char filepath[MAXLINE];
@@ -59,6 +62,11 @@ int main(int argc, char **argv)
         }
 
     fd = open(filepath, O_CREAT | O_WRONLY | O_TRUNC, 0644);
+    if (fd < 0) {
+        perror("open");
+        Close(clientfd);
+        return -1;
+    }
 
     //recevoir fichier
     while ((n = read(clientfd, buf, MAXLINE)) > 0) {
@@ -66,7 +74,6 @@ int main(int argc, char **argv)
     }
 
     close(fd);
-
     printf("fichier reçu et sauvegardé dans %s\n", filepath);
 
     Close(clientfd);
