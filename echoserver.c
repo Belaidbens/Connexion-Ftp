@@ -7,7 +7,7 @@ pid_t pids[NB_PROC];
 //void echo(int connfd);
 
 
-/*void sigint_handler(int sig) {
+void sigint_handler(int sig) {
     printf("Shutting down server...\n");
     signal(SIGINT, SIG_DFL); // rétablir le comportement par défaut pour SIGINT
     for(int i = 0; i < NB_PROC; i++) {
@@ -15,7 +15,7 @@ pid_t pids[NB_PROC];
     }
    kill(0,SIGINT);
     exit(0);
-}*/
+}
 
 
 
@@ -70,7 +70,7 @@ void file_server(int connfd)
 
 int main(int argc, char **argv)
 {
-    //signal(SIGINT, sigint_handler);
+    signal(SIGINT, sigint_handler);
     int listenfd, connfd, port;
     socklen_t clientlen;
     struct sockaddr_in clientaddr;
@@ -86,7 +86,7 @@ int main(int argc, char **argv)
     for (i = 0; i < NB_PROC; i++) {
         pids[i] = fork();
         if (pids[i] == 0) { // fils
-            //signal(SIGINT, sigint_handler); // rétablir le comportement par défaut pour SIGINT
+            signal(SIGINT, sigint_handler); // rétablir le comportement par défaut pour SIGINT
             while (1) {
                 clientlen = sizeof(clientaddr);
 
