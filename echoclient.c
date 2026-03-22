@@ -1,6 +1,7 @@
 #include "bibftp.h"
 #include <stddef.h>
 #include <stdio.h>
+#include <sys/time.h>
 
 int main(int argc, char **argv)
 {
@@ -12,7 +13,6 @@ int main(int argc, char **argv)
     char buf[MAXLINE];
     int fd;
     ssize_t n;
-    int status;
 
     if (argc != 2) {
         fprintf(stderr, "usage: %s <host>\n", argv[0]);
@@ -23,15 +23,24 @@ int main(int argc, char **argv)
 
     clientfd = Open_clientfd(host, PORT_FTP);
 
-    printf("Connected to server\n");
+    printf("Connected to %s.\n", host);
 
     //demander nom fichier au client
-    printf("Nom du fichier à récupérer: ");
-    Fgets(filename, MAXLINE, stdin);
-    filename[strcspn(filename, "\n")] = '\0';
+    char command[MAXLINE];
+    printf("ftp> ");
+    Fgets(command, MAXLINE, stdin);
+    command[strcspn(command, "\n")] = '\0';
+
+    //"get filename"
+    if (sscanf(command, "get %s", filename) != 1) {
+        printf("Commande invalide\n");
+        Close(clientfd);
+        return 0;
+}
+
 
     //construction  requête
-    req.type = GET;
+    req.type = command[0] == 'g' ? GET : -1; // on a get seulement pour linstatn
     strcpy(req.fichier, filename);
 
     //envoi requête
@@ -50,7 +59,7 @@ int main(int argc, char **argv)
         exit(0);
     }
 
-    printf("telechargment du fichier demandé (%zu bytes)\n", (size_t)res.size);
+    
 
     //creation fichier local
     char filepath[MAXLINE];
@@ -69,12 +78,33 @@ int main(int argc, char **argv)
     }
 
     //recevoir fichier
+    struct timeval start, end;
+    gettimeofday(&start, NULL);
+    size_t count = 0;
     while ((n = read(clientfd, buf, MAXLINE)) > 0) {
         write(fd, buf, n);
+        count += n;   
     }
 
-    close(fd);
+    // Afficher des informations sur le transfert
+
+    printf("telechargment du fichier demandé (%zu bytes demandés)\n", (size_t)res.size);
+    printf("Transfer successfully complete ");
+    gettimeofday(&end, NULL);
+    double temps = (end.tv_sec - start.tv_sec) +
+                 (end.tv_usec - start.tv_usec) / 1000000.0;
+
+    double debit = (count / 1024.0) / temps; // en Ko/s
+    printf("(%zu bytes received in %.6f seconds (%.2f Kbytes/s)\n", count, temps, debit);
+
+    if(count != (size_t)res.size) {
+        fprintf(stderr, "Erreur: taille du fichier reçu ne correspond pas à la taille annoncée par le serveur\n");
+        return -1;
+    }
     printf("fichier reçu et sauvegardé dans %s\n", filepath);
+    
+    close(fd);
+
 
     Close(clientfd);
     return 0;
