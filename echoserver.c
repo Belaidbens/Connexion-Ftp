@@ -14,80 +14,91 @@ void sigint_handler(int sig) {
 }
 
 
-
-void file_server(int connfd)
-{
-    request_t req;
+void traiter_get(int connfd, request_t *req) {
     response_t res;
     char buf[BLOCK_SIZE];
     int fd;
     ssize_t n;
-
-    // Lire la requête STRUCTURE
-    if (Rio_readn(connfd, &req, sizeof(request_t)) <= 0) {
-        Close(connfd);
-        return;
-    }
-
-    printf("Client demande le fichier : %s\n", req.fichier);
-
-
-
-    //verif type de requete 
-    if (req.type != GET) {
-        res.status = RES_ERR_MAUVAISE_REQUEST;
-        res.size = 0;
-        strncpy(res.message, "Requete invalide", sizeof(res.message));
-        Rio_writen(connfd, &res, sizeof(res));
-        Close(connfd);
-        return;
-    }
-
     // ouvrir fichier
     char filepath[MAXLINE];
-    int retour=snprintf(filepath, sizeof(filepath), "%s%s", SERVER_DIR, req.fichier);
+    //construire le path
+    int retour=snprintf(filepath, sizeof(filepath), "%s%s", SERVER_DIR, req->fichier);
     if (retour >= (int)sizeof(filepath)) {
         res.status = RES_ERR_INTERNE;
         res.size = 0;
         strncpy(res.message, "Nom de fichier trop long", sizeof(res.message));
         Rio_writen(connfd, &res, sizeof(res));
         fprintf(stderr, "tro long path\n");
-        Close(connfd);
         return;
     }
     fd = open(filepath, O_RDONLY);// Serverdir/fichier
-
-        if (fd < 0) {
+    if (fd < 0) {
             res.status = RES_ERR_NOT_FOUND;
             res.size = 0;
-            snprintf(res.message, sizeof(res.message), "Fichier %.100s introuvable", req.fichier);
+            snprintf(res.message, sizeof(res.message), "Fichier %.100s introuvable", req->fichier);
             Rio_writen(connfd, &res, sizeof(res));
-            Close(connfd);
+            //Close(connfd); le client peut faire d'autres requetes c'est lui qui ferme a la fin
             return;
-        }
+    }
 
         // envoyer acquitement de la requete pour dire oui au client 
-        off_t filesize = lseek(fd, 0, SEEK_END);
-        lseek(fd, 0, SEEK_SET);
-        res.status = RES_VALIDE;
-        res.size = filesize;
-        snprintf(res.message, sizeof(res.message), "Fichier %.100s trouvé et la requete accéptée", req.fichier);
-        Rio_writen(connfd, &res, sizeof(res));
+    off_t filesize = lseek(fd, 0, SEEK_END);
+    lseek(fd, 0, SEEK_SET);
+    res.status = RES_VALIDE;
+    res.size = filesize;
+    snprintf(res.message, sizeof(res.message), "Fichier %.100s trouvé et la requete accéptée", req->fichier);
+    Rio_writen(connfd, &res, sizeof(res));
 
-        //envoyer contenu par bloc de 4096 bytes
-        while ((n = read(fd, buf, BLOCK_SIZE)) > 0) {
-            Rio_writen(connfd, buf, n);
-        }
-        
+    //envoyer contenu par bloc de 4096 bytes
+    while ((n = read(fd, buf, BLOCK_SIZE)) > 0) {
+        Rio_writen(connfd, buf, n);
+    }
 
-        close(fd);
-    
-
-    //fin connexion et fin transfert
-    Close(connfd);
+    close(fd);
 }
 
 
+void file_server(int connfd)
+{
+    request_t req;
+    response_t res;
+
+    while(1){
+
+
+        if (Rio_readn(connfd, &req, sizeof(request_t)) <= 0) {
+            break;
+        }
+
+
+        printf("Requete reçue: type=%d fichier=%s\n",
+        req.type,req.fichier);
+
+        switch (req.type) {
+
+            case GET:
+                traiter_get(connfd, &req);
+                break;
+
+            case BYE:
+                printf("Client disconnected\n");
+                Close(connfd);
+                return;
+
+            default:
+                res.status = RES_ERR_MAUVAISE_REQUEST;
+                res.size = 0;
+                strncpy(res.message, "Requete invalide", sizeof(res.message));
+                Rio_writen(connfd, &res, sizeof(res));
+                //Close(connfd);
+                break;
+        }
+    }
+
+    //fin connexion et fin transfert
+    Close(connfd);
+
+}
 
 
 

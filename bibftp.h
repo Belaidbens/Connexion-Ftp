@@ -17,7 +17,8 @@
 typedef enum {
     GET = 0,
     PUT,
-    LS
+    LS,
+    BYE
 } typereq_t;
 
 typedef struct request_t {
