@@ -10,7 +10,7 @@ int main(int argc, char **argv)
     request_t req;
     response_t res;
     char filename[MAXLINE];
-    char buf[MAXLINE];
+    char buf[BLOCK_SIZE];
     int fd;
     ssize_t n;
 
@@ -76,19 +76,34 @@ int main(int argc, char **argv)
         Close(clientfd);
         return -1;
     }
-
+    //nb blocs a recevoir 
+    size_t nb_blocs = (res.size + BLOCK_SIZE - 1) / BLOCK_SIZE;
+    printf("Nombre de blocs: %zu\n", nb_blocs); 
     //recevoir fichier
     struct timeval start, end;
     gettimeofday(&start, NULL);
     size_t count = 0;
-    while ((n = read(clientfd, buf, MAXLINE)) > 0) {
+    /*while ((n = read(clientfd, buf, BLOCK_SIZE)) > 0) {
         write(fd, buf, n);
+        j++;
         count += n;   
+    }*/
+
+    for (size_t i = 0; i < nb_blocs; i++) {
+        size_t lect = BLOCK_SIZE;
+
+        if (i == nb_blocs - 1) {
+            lect = res.size - (i * BLOCK_SIZE);
+        }
+
+        n = read(clientfd, buf, lect);
+        write(fd, buf, n);
+        count += n;
     }
 
     // Afficher des informations sur le transfert
 
-    printf("telechargment du fichier demandé (%zu bytes demandés)\n", (size_t)res.size);
+    printf("telechargment du fichier demandé (%zu bytes demandés) \n", (size_t)res.size);
     printf("Transfer successfully complete ");
     gettimeofday(&end, NULL);
     double temps = (end.tv_sec - start.tv_sec) +

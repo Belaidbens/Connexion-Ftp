@@ -19,7 +19,7 @@ void file_server(int connfd)
 {
     request_t req;
     response_t res;
-    char buf[MAXLINE];
+    char buf[BLOCK_SIZE];
     int fd;
     ssize_t n;
 
@@ -74,8 +74,8 @@ void file_server(int connfd)
         snprintf(res.message, sizeof(res.message), "Fichier %.100s trouvé et la requete accéptée", req.fichier);
         Rio_writen(connfd, &res, sizeof(res));
 
-        //envoyer contenu
-        while ((n = read(fd, buf, MAXLINE)) > 0) {
+        //envoyer contenu par bloc de 4096 bytes
+        while ((n = read(fd, buf, BLOCK_SIZE)) > 0) {
             Rio_writen(connfd, buf, n);
         }
         
@@ -147,6 +147,5 @@ int main()
     while (1) {
         pause();
     }
-
     return 0;
 }

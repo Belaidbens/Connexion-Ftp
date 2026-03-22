@@ -12,6 +12,7 @@
 #define RES_ERR_MAUVAISE_REQUEST -2
 #define RES_ERR_INTERNE -3
 #define RES_VALIDE 0
+#define BLOCK_SIZE 4096
 
 typedef enum {
     GET = 0,
